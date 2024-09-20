@@ -8,7 +8,7 @@ const cors = require('cors');
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
   })
 );
 
@@ -24,11 +24,13 @@ app.get('/test', (req, res) => {
   res.send('Test route is working');
 });
 
+app.options('*', cors());
+
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'jwtsecret', (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid token' });
     req.user = user;
     next();
@@ -42,7 +44,7 @@ app.get('/users/me', authenticateToken, async (req, res) => {
     ]);
     if (result.rows.length > 0) {
       const user = result.rows[0];
-      delete user.password; // Remove password from response
+      delete user.password;
       res.status(200).json(user);
     } else {
       res.status(404).json({ error: 'User not found' });
@@ -71,13 +73,16 @@ app.post('/users/signup', async (req, res) => {
 
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const result = await client.query('SELECT * FROM users WHERE email = $1', [
       email,
     ]);
+
     if (result.rows.length === 0) {
       return res.status(400).json({ error: 'User not found' });
     }
+
     const user = result.rows[0];
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -88,10 +93,10 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || 'jwtsecret',
-      { expiresIn: '1h' }
+      { expiresIn: '1000d' }
     );
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, userId: user.id });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Login failed' });
@@ -195,8 +200,8 @@ app.get('/items/:id', async (req, res) => {
 // Reviews
 app.post('/reviews', async (req, res) => {
   const { text, rating, userId, itemId } = req.body;
-  if (rating < 1 || rating > 5) {
-    return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+  if (!text || !rating || !userId || !itemId) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
@@ -211,18 +216,31 @@ app.post('/reviews', async (req, res) => {
 });
 
 app.get('/reviews/:id', async (req, res) => {
-  const { id } = req.params;
+  const { text, rating } = req.body;
+  const { itemId } = req.params;
+  const userId = req.user.id;
+
   try {
-    const result = await client.query('SELECT * FROM reviews WHERE id = $1', [
-      id,
-    ]);
-    if (result.rows.length > 0) {
-      res.status(200).json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Review not found' });
+    const existingReview = await client.query(
+      'SELECT * FROM reviews WHERE user_id = $1 AND item_id = $2',
+      [userId, itemId]
+    );
+
+    if (existingReview.rows.length > 0) {
+      return res
+        .status(400)
+        .json({ error: 'You have already submitted a review for this item.' });
     }
+
+    const result = await client.query(
+      'INSERT INTO reviews (text, rating, user_id, item_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [text, rating, userId, itemId]
+    );
+
+    return res.status(201).json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: 'Database query failed' });
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -258,125 +276,146 @@ app.get('/items/:item_id/reviews', async (req, res) => {
   }
 });
 
-app.put('/reviews/:id', async (req, res) => {
-  const { id } = req.params;
+app.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
+  const { reviewId } = req.params;
   const { text, rating } = req.body;
+  const userId = req.user.id;
   try {
-    const result = await client.query(
-      'UPDATE reviews SET text = $1, rating = $2 WHERE id = $3 RETURNING *',
-      [text, rating, id]
+    const review = await client.query(
+      'SELECT * FROM reviews WHERE id = $1 AND user_id = $2',
+      [reviewId, userId]
     );
-    if (result.rows.length > 0) {
-      res.status(200).json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Review not found' });
+
+    if (review.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Review not found or you are not authorized to edit it.',
+      });
     }
+
+    const result = await client.query(
+      'UPDATE reviews SET text = $1, rating = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
+      [text, rating, reviewId, userId]
+    );
+
+    res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error('Database query failed:', error);
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error updating review:', error);
+    res.status(500).json({ error: 'Failed to update review' });
   }
 });
 
-app.delete('/reviews/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete('/reviews/:reviewId', authenticateToken, async (req, res) => {
+  const { reviewId } = req.params;
+  const userId = req.user.id;
+
   try {
     const result = await client.query(
-      'DELETE FROM reviews WHERE id = $1 RETURNING *',
-      [id]
+      'DELETE FROM reviews WHERE id = $1 AND user_id = $2 RETURNING *',
+      [reviewId, userId]
     );
-    if (result.rowCount > 0) {
-      res.status(200).json({ message: 'Review deleted successfully' });
-    } else {
-      res.status(404).json({ error: 'Review not found' });
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        error: 'Review not found or you are not authorized to delete it.',
+      });
     }
+    res.status(200).json({ message: 'Review deleted successfully' });
   } catch (error) {
-    console.error('Database query failed:', error); // Log error to console
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error deleting review:', error);
+    res.status(500).json({ error: 'Failed to delete review' });
   }
 });
 
 // Comments
-app.post('/comments', async (req, res) => {
-  const { text, reviewId, userId } = req.body;
+app.post('/comments/:reviewId', authenticateToken, async (req, res) => {
+  const { text } = req.body;
+  const { reviewId } = req.params;
+  const userId = req.user.id;
   try {
     const result = await client.query(
-      'INSERT INTO comments (text, review_id, user_id) VALUES ($1, $2, $3) RETURNING *',
-      [text, reviewId, userId]
+      'INSERT INTO comments (text, user_id, review_id) VALUES ($1, $2, $3) RETURNING *',
+      [text, userId, reviewId]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    res.status(400).json({ error: 'Unable to create comment' });
+    console.error('Error creating comment:', error);
+    res.status(500).json({ error: 'Failed to create comment' });
   }
 });
 
-app.get('/comments/user/:userId', async (req, res) => {
+app.get('/comments/user/:userId', authenticateToken, async (req, res) => {
   const { userId } = req.params;
+
   try {
     const result = await client.query(
-      'SELECT * FROM comments WHERE user_id = $1',
+      'SELECT * FROM comments WHERE user_id = $1 ORDER BY created_at DESC',
       [userId]
     );
-    if (result.rows.length > 0) {
-      res.status(200).json(result.rows);
-    } else {
-      res.status(404).json({ error: 'No comments found for this user' });
-    }
+    res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Database query failed:', error);
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error fetching user comments:', error);
+    res.status(500).json({ error: 'Failed to fetch user comments' });
   }
 });
 
-app.get('/comments/:id', async (req, res) => {
-  const { id } = req.params;
+app.get('/comments/review/:reviewId', async (req, res) => {
+  const { reviewId } = req.params;
+  console.log('Fetching comments for review ID:', reviewId);
   try {
-    const result = await client.query('SELECT * FROM comments WHERE id = $1', [
-      id,
-    ]);
-    if (result.rows.length > 0) {
-      res.status(200).json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Comment not found' });
-    }
+    const result = await client.query(
+      'SELECT * FROM comments WHERE review_id = $1 ORDER BY created_at DESC',
+      [reviewId]
+    );
+    res.status(200).json(result.rows);
   } catch (error) {
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ error: 'Failed to fetch comments' });
   }
 });
 
-app.put('/comments/:id', async (req, res) => {
-  const { id } = req.params;
+app.put('/comments/:commentId', authenticateToken, async (req, res) => {
   const { text } = req.body;
+  const { commentId } = req.params;
+  const userId = req.user.id;
+
   try {
     const result = await client.query(
-      'UPDATE comments SET text = $1 WHERE id = $2 RETURNING *',
-      [text, id]
+      'UPDATE comments SET text = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [text, commentId, userId]
     );
-    if (result.rows.length > 0) {
-      res.status(200).json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Comment not found' });
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: 'Comment not found or not authorized to edit' });
     }
+
+    res.status(200).json(result.rows[0]);
   } catch (error) {
-    console.error('Database query failed:', error);
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error editing comment:', error);
+    res.status(500).json({ error: 'Failed to edit comment' });
   }
 });
 
-app.delete('/comments/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete('/comments/:commentId', authenticateToken, async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user.id;
+
   try {
     const result = await client.query(
-      'DELETE FROM comments WHERE id = $1 RETURNING *',
-      [id]
+      'DELETE FROM comments WHERE id = $1 AND user_id = $2 RETURNING *',
+      [commentId, userId]
     );
-    if (result.rowCount > 0) {
-      res.status(200).json({ message: 'Comment deleted successfully' });
-    } else {
-      res.status(404).json({ error: 'Comment not found' });
+
+    if (result.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ error: 'Comment not found or not authorized to delete' });
     }
+
+    res.status(200).json({ message: 'Comment deleted successfully' });
   } catch (error) {
-    console.error('Database query failed:', error); // Log error to console
-    res.status(500).json({ error: 'Database query failed' });
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
 

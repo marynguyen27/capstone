@@ -24,7 +24,7 @@ const SignUp = () => {
       });
 
       if (response.ok) {
-        navigate('/login');
+        console.log('Sign-up successful!');
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'An error occurred. Please try again.');

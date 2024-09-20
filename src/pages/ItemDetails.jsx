@@ -1,58 +1,120 @@
-// detail page per item
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ReviewForm from './ReviewForm';
 import Reviews from './Reviews';
+import ReviewComments from './ReviewComments';
 
 const ItemDetails = () => {
-  const { id } = useParams();
-  const [items, setItem] = useState(null);
+  const { id: currentItemId } = useParams();
+  const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const loggedInUserId = localStorage.getItem('userId');
+  const userToken = localStorage.getItem('token');
 
-  const handleReviewSubmit = (newReview) => {
-    setReviews((prevReviews) => [...prevReviews, newReview]);
+  const calculateAverageRating = (reviews) => {
+    if (reviews.length === 0) return null;
+
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return (total / reviews.length).toFixed(1);
   };
 
   useEffect(() => {
     const fetchItemDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/items/${id}`);
-        if (!response.ok) {
-          throw new Error('Item not found');
-        }
-        const data = await response.json();
-        setItem(data);
+        const itemResponse = await fetch(
+          `http://localhost:3000/items/${currentItemId}`
+        );
+        const itemData = await itemResponse.json();
+        setItem(itemData);
+
+        const reviewsResponse = await fetch(
+          `http://localhost:3000/items/${currentItemId}/reviews`
+        );
+        const reviewsData = await reviewsResponse.json();
+        setReviews(reviewsData);
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching item details:', error);
+        console.error('Error fetching item or reviews:', error);
+        setError(error.message);
+        setLoading(false);
       }
     };
 
     fetchItemDetails();
-  }, [id]);
+  }, [currentItemId]);
 
+  const handleReviewSubmit = async (reviewText, reviewRating) => {
+    const review = {
+      text: reviewText,
+      rating: reviewRating,
+      userId: loggedInUserId,
+      itemId: currentItemId,
+    };
+
+    console.log('Review payload:', review);
+
+    try {
+      const response = await fetch('http://localhost:3000/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify(review),
+      });
+
+      if (response.ok) {
+        const newReview = await response.json();
+        setReviews([...reviews, newReview]);
+        console.log('Review saved successfully:', newReview);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to submit review');
+      }
+    } catch (err) {
+      setError('Error submitting review');
+    }
+  };
   if (loading) {
     return <div>Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error.message}</div>;
+    return <div>Error: {error}</div>;
   }
 
-  if (!items) {
+  if (!item) {
     return <div>No item found</div>;
   }
+
+  const averageRating = calculateAverageRating(reviews);
 
   return (
     <div>
       <h1>Item Details</h1>
-      <h2>{items.name}</h2>
-      <p>Rating: {items.rating}</p>
-      <p>Description: {items.description}</p>
-      <ReviewForm itemId={itemId} onReviewSubmit={handleReviewSubmit} />
-      <Reviews itemId={itemId} />
+      <h2>{item.name}</h2>
+      <p>Average Rating: {averageRating ? averageRating : 'No ratings yet'}</p>
+      <p>Description: {item.description}</p> <h2>Reviews</h2>
+      {reviews.length > 0 ? (
+        reviews.map((review) => (
+          <div key={review.id}>
+            <p>Rating: {review.rating}</p>
+            <p>{review.text}</p>
+
+            <ReviewComments reviewId={review.id} />
+          </div>
+        ))
+      ) : (
+        <p>No reviews listed</p>
+      )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2>Leave a Review</h2>
+      <ReviewForm
+        itemId={currentItemId}
+        onReviewSubmit={handleReviewSubmit}
+      />{' '}
     </div>
   );
 };

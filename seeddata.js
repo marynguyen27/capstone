@@ -241,7 +241,10 @@ async function seedData() {
     // Seed Items
     console.log('Seeding Items...');
     for (const dish of dishes) {
-      await client.query('INSERT INTO items (name) VALUES ($1)', [dish]);
+      await client.query(
+        'INSERT INTO items (name, description) VALUES ($1, $2)',
+        [dish, 'This is a description']
+      );
     }
     console.log(`${dishes.length} items (dishes) inserted successfully`);
 
@@ -251,7 +254,7 @@ async function seedData() {
       text: `Review text ${i + 1}`,
       rating: Math.floor(Math.random() * 5) + 1, // Random rating between 1 and 5
       user_id: Math.floor(Math.random() * 200) + 1, // Random user_id between 1 and 200
-      item_id: Math.floor(Math.random() * 200) + 1, // Random item_id between 1 and 200
+      item_id: Math.floor(Math.random() * dishes.length) + 1, // Random item_id between 1 and 200
     }));
     for (const review of reviews) {
       await client.query(

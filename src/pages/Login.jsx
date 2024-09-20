@@ -1,25 +1,16 @@
-// user login functionality
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsLoggedIn(true);
-      navigate('/user-profile');
-    }
-  }, [navigate]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     try {
       const response = await fetch('http://localhost:3000/login', {
@@ -30,18 +21,25 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const { token } = data;
+      const data = await response.json();
 
-        localStorage.setItem('token', token);
+      console.log('Login response data:', data);
+
+      if (response.ok) {
+        const { token, userId } = data;
+        console.log('userId:', userId);
+
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('token', data.token);
+
         navigate('/user-profile');
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Login failed');
+        setError(data.error || 'Login failed, please try again.');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      setError('An error occurred during login. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,7 +67,9 @@ const Login = () => {
             required
           />
         </div>
-        <button type='submit'>Log In</button>
+        <button type='submit' disabled={loading}>
+          {loading ? 'Logging in...' : 'Log In'}
+        </button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </form>
       <p>

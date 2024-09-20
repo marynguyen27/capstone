@@ -1,11 +1,12 @@
-// page after user logged in, shows list of reviews, shows list of comments
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [editMode, setEditMode] = useState(null);
+  const [editedText, setEditedText] = useState('');
+  const [editedRating, setEditedRating] = useState(5);
   const [comments, setComments] = useState([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,11 +18,14 @@ const UserProfile = () => {
       const token = localStorage.getItem('token');
       if (!token) {
         setError('No token found, please log in.');
+        navigate('/login');
         return;
       }
 
+      console.log('Token being sent:', token);
+
       try {
-        const response = await fetch('http://localhost:3000/users/me', {
+        const userResponse = await fetch('http://localhost:3000/users/me', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -29,17 +33,12 @@ const UserProfile = () => {
           },
         });
 
-        if (response.status === 403) {
-          setError('Access forbidden, token might be invalid.');
-          return;
-        }
+        console.log('User profile response:', userResponse);
 
-        if (response.ok) {
-          const userData = await response.json();
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
           setUser(userData);
           setEmail(userData.email);
-
-          // Fetch user's reviews and comments
           const reviewsResponse = await fetch(
             `http://localhost:3000/reviews/user/${userData.id}`,
             {
@@ -49,6 +48,8 @@ const UserProfile = () => {
               },
             }
           );
+          const reviewsData = await reviewsResponse.json();
+          setReviews(reviewsData);
 
           const commentsResponse = await fetch(
             `http://localhost:3000/comments/user/${userData.id}`,
@@ -59,25 +60,14 @@ const UserProfile = () => {
               },
             }
           );
-
-          if (reviewsResponse.ok) {
-            const reviewsData = await reviewsResponse.json();
-            setReviews(reviewsData);
-          } else {
-            setError('Failed to fetch reviews.');
-          }
-
-          if (commentsResponse.ok) {
-            const commentsData = await commentsResponse.json();
-            setComments(commentsData);
-          } else {
-            setError('Failed to fetch comments.');
-          }
+          const commentsData = await commentsResponse.json();
+          setComments(commentsData);
         } else {
           setError('Failed to fetch user profile.');
         }
       } catch (error) {
         setError('An unexpected error occurred.');
+        console.error('Error:', error);
       }
     };
 
@@ -89,19 +79,10 @@ const UserProfile = () => {
     navigate('/login');
   };
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!user) {
-    return <div>Loading...</div>;
-  }
-
   const handleUpdate = async (e) => {
     e.preventDefault();
-
+    const token = localStorage.getItem('token');
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:3000/users/me', {
         method: 'PUT',
         headers: {
@@ -122,73 +103,165 @@ const UserProfile = () => {
     }
   };
 
+  const handleDelete = async (reviewId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `http://localhost:3000/reviews/${reviewId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setReviews(reviews.filter((review) => review.id !== reviewId));
+      } else {
+        setError('Failed to delete review');
+      }
+    } catch (error) {
+      setError('Error deleting review');
+    }
+  };
+
+  const handleEdit = async (reviewId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `http://localhost:3000/reviews/${reviewId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: editedText, rating: editedRating }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedReview = await response.json();
+        setReviews(
+          reviews.map((review) =>
+            review.id === reviewId ? updatedReview : review
+          )
+        );
+        setEditMode(null);
+      } else {
+        setError('Failed to update review');
+      }
+    } catch (error) {
+      setError('Error updating review');
+    }
+  };
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div style={styles.container}>
       <h1 style={styles.header}>User Profile</h1>
-      {user ? (
-        <div>
-          <form onSubmit={handleUpdate} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label htmlFor='email' style={styles.label}>
-                Email:
-              </label>
-              <input
-                type='email'
-                id='email'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                style={styles.input}
-              />
-            </div>
-            <div style={styles.formGroup}>
-              <label htmlFor='password' style={styles.label}>
-                Password:
-              </label>
-              <input
-                type='password'
-                id='password'
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={styles.input}
-              />
-            </div>
-            {error && <p style={styles.error}>{error}</p>}
-            <button type='submit' style={styles.button}>
-              Update Profile
-            </button>
-          </form>
+      <form onSubmit={handleUpdate} style={styles.form}>
+        <div style={styles.formGroup}>
+          <label htmlFor='email' style={styles.label}>
+            Email:
+          </label>
+          <input
+            type='email'
+            id='email'
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={styles.input}
+          />
+        </div>
+        <div style={styles.formGroup}>
+          <label htmlFor='password' style={styles.label}>
+            Password:
+          </label>
+          <input
+            type='password'
+            id='password'
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+          />
+        </div>
+        {error && <p style={styles.error}>{error}</p>}
+        <button type='submit' style={styles.button}>
+          Update Profile
+        </button>
+      </form>
 
-          <h2 style={styles.subHeader}>Your Reviews</h2>
-          {reviews.length > 0 ? (
-            <ul style={styles.list}>
-              {reviews.map((review) => (
-                <li key={review.id} style={styles.listItem}>
+      <h2 style={styles.subHeader}>Your Reviews</h2>
+      {reviews.length > 0 ? (
+        <ul>
+          {reviews.map((review) => (
+            <li key={review.id}>
+              {editMode === review.id ? (
+                <div>
+                  {/* Edit Form */}
+                  <textarea
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    value={editedRating}
+                    onChange={(e) => setEditedRating(e.target.value)}
+                    min='1'
+                    max='5'
+                  />
+                  <button onClick={() => handleEdit(review.id)}>Save</button>
+                  <button onClick={() => setEditMode(null)}>Cancel</button>
+                </div>
+              ) : (
+                <div>
                   <p>{review.text}</p>
                   <p>Rating: {review.rating}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No reviews found.</p>
-          )}
-
-          <h2 style={styles.subHeader}>Your Comments</h2>
-          {comments.length > 0 ? (
-            <ul style={styles.list}>
-              {comments.map((comment) => (
-                <li key={comment.id} style={styles.listItem}>
-                  <p>{comment.text}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No comments found.</p>
-          )}
-        </div>
+                  <button
+                    onClick={() => {
+                      setEditMode(review.id);
+                      setEditedText(review.text);
+                      setEditedRating(review.rating);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(review.id)}>
+                    Delete
+                  </button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p>Loading...</p>
+        <p>No reviews found.</p>
       )}
+
+      <h2 style={styles.subHeader}>Your Comments</h2>
+      {comments.length > 0 ? (
+        <ul style={styles.list}>
+          {comments.map((comment) => (
+            <li key={comment.id} style={styles.listItem}>
+              <p>{comment.text}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No comments found.</p>
+      )}
+      <button onClick={handleLogout} style={styles.button}>
+        Logout
+      </button>
     </div>
   );
 };

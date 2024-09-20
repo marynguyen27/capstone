@@ -2,9 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
-  const [items, setItems] = useState([]);
+  const [dishes, setDishes] = useState([]);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredItems, setFilteredItems] = useState([]);
+
+  const fetchDishes = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/items');
+      if (!response.ok) {
+        throw new Error('Failed to fetch dishes');
+      }
+      const data = await response.json();
+      setDishes(data);
+    } catch (error) {
+      console.error('Error fetching dishes:', error);
+      setError(error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchDishes();
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -60,6 +79,21 @@ const Home = () => {
             : searchQuery && <li>No items found</li>}
         </ul>
       </div>
+
+      <h1>List of Dishes</h1>
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      {dishes.length > 0 ? (
+        <ul>
+          {dishes.map((dish) => (
+            <li key={dish.id}>
+              <Link to={`/items/${dish.id}`}>{dish.name}</Link>{' '}
+              {/* Each dish is a link */}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No dishes found.</p>
+      )}
     </div>
   );
 };
