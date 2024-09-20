@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
@@ -7,6 +7,8 @@ const UserProfile = () => {
   const [editMode, setEditMode] = useState(null);
   const [editedText, setEditedText] = useState('');
   const [editedRating, setEditedRating] = useState(5);
+  const [editCommentMode, setEditCommentMode] = useState(null);
+  const [editedCommentText, setEditedCommentText] = useState('');
   const [comments, setComments] = useState([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -157,6 +159,70 @@ const UserProfile = () => {
     }
   };
 
+  const handleDeleteComment = async (commentId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `http://localhost:3000/comments/${commentId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const updatedCommentsResponse = await fetch(
+          `http://localhost:3000/comments/user/${user.id}`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const updatedComments = await updatedCommentsResponse.json();
+        setComments(updatedComments); // Update the state with fresh data
+      } else {
+        setError('Failed to delete comment');
+      }
+    } catch (error) {
+      setError('Error deleting comment');
+    }
+  };
+
+  const handleEditComment = async (commentId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(
+        `http://localhost:3000/comments/${commentId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: editedCommentText }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedComment = await response.json();
+        setComments(
+          comments.map((comment) =>
+            comment.id === commentId ? updatedComment : comment
+          )
+        );
+        setEditCommentMode(null);
+      } else {
+        setError('Failed to update comment');
+      }
+    } catch (error) {
+      setError('Error updating comment');
+    }
+  };
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -196,9 +262,12 @@ const UserProfile = () => {
         </div>
         {error && <p style={styles.error}>{error}</p>}
         <button type='submit' style={styles.button}>
-          Update Profile
+          Update Email or Password
         </button>
       </form>
+      <button onClick={handleLogout} style={styles.button}>
+        Logout
+      </button>
 
       <h2 style={styles.subHeader}>Your Reviews</h2>
       {reviews.length > 0 ? (
@@ -207,7 +276,6 @@ const UserProfile = () => {
             <li key={review.id}>
               {editMode === review.id ? (
                 <div>
-                  {/* Edit Form */}
                   <textarea
                     value={editedText}
                     onChange={(e) => setEditedText(e.target.value)}
@@ -251,17 +319,53 @@ const UserProfile = () => {
       {comments.length > 0 ? (
         <ul style={styles.list}>
           {comments.map((comment) => (
-            <li key={comment.id} style={styles.listItem}>
-              <p>{comment.text}</p>
+            <li key={comment.comment_id} style={styles.listItem}>
+              {editCommentMode === comment.comment_id ? (
+                <div>
+                  <textarea
+                    value={editedCommentText}
+                    onChange={(e) => setEditedCommentText(e.target.value)}
+                  />
+                  <button onClick={() => handleEditComment(comment.comment_id)}>
+                    Save
+                  </button>
+                  <button onClick={() => setEditCommentMode(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p>
+                    <strong>Comment:</strong> {comment.comment_text}
+                  </p>
+                  <p>
+                    <strong>For Item:</strong>{' '}
+                    <Link to={`/items/${comment.item_id}`}>
+                      {comment.item_name}
+                    </Link>
+                  </p>
+
+                  <button
+                    onClick={() => {
+                      setEditCommentMode(comment.comment_id);
+                      setEditedCommentText(comment.comment_text);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteComment(comment.comment_id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       ) : (
         <p>No comments found.</p>
       )}
-      <button onClick={handleLogout} style={styles.button}>
-        Logout
-      </button>
     </div>
   );
 };

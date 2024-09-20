@@ -344,27 +344,49 @@ app.post('/comments/:reviewId', authenticateToken, async (req, res) => {
 
 app.get('/comments/user/:userId', authenticateToken, async (req, res) => {
   const { userId } = req.params;
-
   try {
     const result = await client.query(
-      'SELECT * FROM comments WHERE user_id = $1 ORDER BY created_at DESC',
+      `
+      SELECT comments.id AS comment_id, comments.text AS comment_text, 
+             items.name AS item_name, items.id AS item_id
+      FROM comments
+      JOIN reviews ON comments.review_id = reviews.id
+      JOIN items ON reviews.item_id = items.id
+      WHERE comments.user_id = $1
+      ORDER BY comments.id DESC;
+    `,
       [userId]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No comments found for this user' });
+    }
+
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Error fetching user comments:', error);
+    console.error('Error fetching user comments with item:', error);
     res.status(500).json({ error: 'Failed to fetch user comments' });
   }
 });
 
 app.get('/comments/review/:reviewId', async (req, res) => {
   const { reviewId } = req.params;
-  console.log('Fetching comments for review ID:', reviewId);
+  console.log(`Fetching comments for review ID: ${reviewId}`);
+
   try {
     const result = await client.query(
-      'SELECT * FROM comments WHERE review_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM comments WHERE review_id = $1',
       [reviewId]
     );
+
+    console.log('Comments fetched:', result.rows);
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: 'No comments found for this review' });
+    }
+
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error fetching comments:', error);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
@@ -7,6 +7,14 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -42,6 +50,15 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  if (isLoggedIn) {
+    return (
+      <div>
+        <h1>You Are Logged In</h1>
+        <button onClick={() => navigate('/user-profile')}>Go to Profile</button>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,6 +1,6 @@
 // user registration (sign up)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
@@ -8,6 +8,14 @@ const SignUp = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +41,17 @@ const SignUp = () => {
       setError('An unexpected error occurred. Please try again.');
     }
   };
+
+  if (isLoggedIn) {
+    return (
+      <div style={styles.container}>
+        <h1>You Are Logged In</h1>
+        <button onClick={() => navigate('/user-profile')} style={styles.button}>
+          Go to Profile
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>

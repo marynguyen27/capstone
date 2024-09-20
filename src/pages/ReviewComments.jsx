@@ -11,10 +11,21 @@ const ReviewComments = ({ reviewId }) => {
         const response = await fetch(
           `http://localhost:3000/comments/review/${reviewId}`
         );
+
+        if (response.status === 404) {
+          setComments([]);
+          console.log('No comments found for this review');
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch comments');
+        }
+
         const data = await response.json();
         setComments(data);
       } catch (error) {
-        setError('Failed to load comments.');
+        console.error('Error:', error.message);
       }
     };
 
