@@ -5,15 +5,16 @@ import './UserProfile.css';
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [editMode, setEditMode] = useState(null);
-  const [editedText, setEditedText] = useState('');
-  const [editedRating, setEditedRating] = useState(5);
-  const [editCommentMode, setEditCommentMode] = useState(null);
-  const [editedCommentText, setEditedCommentText] = useState('');
   const [comments, setComments] = useState([]);
+  const [editMode, setEditMode] = useState(null);
+  const [editCommentMode, setEditCommentMode] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [editedText, setEditedText] = useState('');
+  const [editedRating, setEditedRating] = useState(5);
+  const [editedCommentText, setEditedCommentText] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,8 +26,6 @@ const UserProfile = () => {
         return;
       }
 
-      console.log('Token being sent:', token);
-
       try {
         const userResponse = await fetch('http://localhost:3000/users/me', {
           method: 'GET',
@@ -35,8 +34,6 @@ const UserProfile = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        console.log('User profile response:', userResponse);
 
         if (userResponse.ok) {
           const userData = await userResponse.json();
@@ -84,19 +81,30 @@ const UserProfile = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
+
     const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const payload = { email };
+
+    if (password) {
+      payload.password = password;
+    }
+
     try {
-      const response = await fetch('http://localhost:3000/users/me', {
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        navigate('/user-profile');
+        setSuccess('Profile updated successfully.');
+        setPassword('');
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to update profile.');
@@ -106,7 +114,7 @@ const UserProfile = () => {
     }
   };
 
-  const handleDelete = async (reviewId) => {
+  const handleDeleteReview = async (reviewId) => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
@@ -129,7 +137,7 @@ const UserProfile = () => {
     }
   };
 
-  const handleEdit = async (reviewId) => {
+  const handleEditReview = async (reviewId) => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
@@ -174,17 +182,9 @@ const UserProfile = () => {
       );
 
       if (response.ok) {
-        const updatedCommentsResponse = await fetch(
-          `http://localhost:3000/comments/user/${user.id}`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        setComments(
+          comments.filter((comment) => comment.comment_id !== commentId)
         );
-        const updatedComments = await updatedCommentsResponse.json();
-        setComments(updatedComments); // Update the state with fresh data
       } else {
         setError('Failed to delete comment');
       }
@@ -212,7 +212,7 @@ const UserProfile = () => {
         const updatedComment = await response.json();
         setComments(
           comments.map((comment) =>
-            comment.id === commentId ? updatedComment : comment
+            comment.comment_id === commentId ? updatedComment : comment
           )
         );
         setEditCommentMode(null);
@@ -251,7 +251,7 @@ const UserProfile = () => {
         </div>
         <div className='form-group'>
           <label htmlFor='password' className='label'>
-            Password:
+            Password (optional):
           </label>
           <input
             type='password'
@@ -259,8 +259,10 @@ const UserProfile = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className='input'
+            placeholder='Enter new password'
           />
         </div>
+        {success && <p className='success'>{success}</p>}
         {error && <p className='error'>{error}</p>}
         <button type='submit' className='button'>
           Update Email or Password
@@ -288,7 +290,9 @@ const UserProfile = () => {
                     min='1'
                     max='5'
                   />
-                  <button onClick={() => handleEdit(review.id)}>Save</button>
+                  <button onClick={() => handleEditReview(review.id)}>
+                    Save
+                  </button>
                   <button onClick={() => setEditMode(null)}>Cancel</button>
                 </div>
               ) : (
@@ -304,7 +308,7 @@ const UserProfile = () => {
                   >
                     Edit
                   </button>
-                  <button onClick={() => handleDelete(review.id)}>
+                  <button onClick={() => handleDeleteReview(review.id)}>
                     Delete
                   </button>
                 </div>
@@ -345,7 +349,6 @@ const UserProfile = () => {
                       {comment.item_name}
                     </Link>
                   </p>
-
                   <button
                     onClick={() => {
                       setEditCommentMode(comment.comment_id);

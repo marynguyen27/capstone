@@ -145,6 +145,53 @@ app.get('/users/:id', async (req, res) => {
   }
 });
 
+app.put('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  const { email, password } = req.body;
+  const fieldsToUpdate = [];
+
+  try {
+    const result = await client.query('SELECT * FROM users WHERE id = $1', [
+      userId,
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (email) {
+      fieldsToUpdate.push(`email = '${email}'`);
+    }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      fieldsToUpdate.push(`password = '${hashedPassword}'`);
+    }
+
+    if (fieldsToUpdate.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const updateQuery = `
+      UPDATE users 
+      SET ${fieldsToUpdate.join(', ')} 
+      WHERE id = $1 
+      RETURNING *;
+    `;
+
+    const updatedUser = await client.query(updateQuery, [userId]);
+
+    res.status(200).json({
+      message: 'User profile updated successfully',
+      user: updatedUser.rows[0],
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Items
 app.post('/items', async (req, res) => {
   const { name } = req.body;
