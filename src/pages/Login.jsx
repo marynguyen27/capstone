@@ -52,11 +52,19 @@ const Login = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    setIsLoggedIn(false);
+    navigate('/login');
+  };
+
   if (isLoggedIn) {
     return (
       <div className='container'>
         <h1 className='title'>You Are Logged In</h1>
         <button onClick={() => navigate('/user-profile')}>Go to Profile</button>
+        <button onClick={handleLogout}>Logout</button>
       </div>
     );
   }
@@ -75,6 +83,7 @@ const Login = () => {
             required
           />
         </div>
+
         <div>
           <label htmlFor='password'>Password:</label>
           <input

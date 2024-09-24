@@ -1,0 +1,52 @@
+.item-details-container {
+  padding: 20px;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.item-details-header {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.item-details-subheader {
+  font-size: 1.5rem;
+  margin: 5px 0;
+}
+
+.item-details-description {
+  margin-top: 15px;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.average-rating {
+  font-weight: bold;
+  font-style: italic;
+  color: #4b62c4;
+  margin-bottom: 20px;
+}
+
+.reviews-section {
+  margin-top: 30px;
+}
+
+.review-item {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.review-rating {
+  font-weight: bold;
+  color: #5497c3;
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+}
+
+.leave-review-section {
+  margin-top: 40px;
+}

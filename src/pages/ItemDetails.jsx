@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import ReviewForm from './ReviewForm';
 import Reviews from './Reviews';
 import ReviewComments from './ReviewComments';
+import './ItemDetails.css';
 
 const ItemDetails = () => {
   const { id: currentItemId } = useParams();
@@ -92,29 +93,35 @@ const ItemDetails = () => {
   const averageRating = calculateAverageRating(reviews);
 
   return (
-    <div>
-      <h1>Item Details</h1>
-      <h2>{item.name}</h2>
-      <p>Average Rating: {averageRating ? averageRating : 'No ratings yet'}</p>
-      <p>Description: {item.description}</p> <h2>Reviews</h2>
-      {reviews.length > 0 ? (
-        reviews.map((review) => (
-          <div key={review.id}>
-            <p>Rating: {review.rating}</p>
-            <p>{review.text}</p>
+    <div className='item-details-container'>
+      <h1 className='item-details-header'>Item Details</h1>
+      <h2 className='item-details-subheader'>{item.name}</h2>
+      <p className='average-rating'>
+        Average Rating: {averageRating ? averageRating : 'No ratings yet'}
+      </p>
+      <p className='item-details-description'>
+        Description: {item.description}
+      </p>
 
-            <ReviewComments reviewId={review.id} />
-          </div>
-        ))
-      ) : (
-        <p>No reviews listed</p>
-      )}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <h2>Leave a Review</h2>
-      <ReviewForm
-        itemId={currentItemId}
-        onReviewSubmit={handleReviewSubmit}
-      />{' '}
+      <h2 className='item-details-subheader'>Reviews</h2>
+      <div className='reviews-section'>
+        {reviews.length > 0 ? (
+          reviews.map((review) => (
+            <div key={review.id} className='review-item'>
+              <p className='review-rating'>Rating: {review.rating}</p>
+              <p>{review.text}</p>
+              <ReviewComments reviewId={review.id} />
+            </div>
+          ))
+        ) : (
+          <p>No reviews listed</p>
+        )}
+      </div>
+
+      {error && <p className='error-message'>Error: {error}</p>}
+
+      <h2 className='leave-review-section'>Leave a Review</h2>
+      <ReviewForm itemId={currentItemId} onReviewSubmit={handleReviewSubmit} />
     </div>
   );
 };
