@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import './UserProfile.css';
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
@@ -232,11 +233,11 @@ const UserProfile = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>User Profile</h1>
-      <form onSubmit={handleUpdate} style={styles.form}>
-        <div style={styles.formGroup}>
-          <label htmlFor='email' style={styles.label}>
+    <div className='container'>
+      <h1 className='header'>User Profile</h1>
+      <form onSubmit={handleUpdate} className='form'>
+        <div className='form-group'>
+          <label htmlFor='email' className='label'>
             Email:
           </label>
           <input
@@ -245,11 +246,11 @@ const UserProfile = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={styles.input}
+            className='input'
           />
         </div>
-        <div style={styles.formGroup}>
-          <label htmlFor='password' style={styles.label}>
+        <div className='form-group'>
+          <label htmlFor='password' className='label'>
             Password:
           </label>
           <input
@@ -257,23 +258,23 @@ const UserProfile = () => {
             id='password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
+            className='input'
           />
         </div>
-        {error && <p style={styles.error}>{error}</p>}
-        <button type='submit' style={styles.button}>
+        {error && <p className='error'>{error}</p>}
+        <button type='submit' className='button'>
           Update Email or Password
         </button>
       </form>
-      <button onClick={handleLogout} style={styles.button}>
+      <button onClick={handleLogout} className='button'>
         Logout
       </button>
 
-      <h2 style={styles.subHeader}>Your Reviews</h2>
+      <h2 className='sub-header'>Your Reviews</h2>
       {reviews.length > 0 ? (
-        <ul>
+        <ul className='list'>
           {reviews.map((review) => (
-            <li key={review.id}>
+            <li key={review.id} className='list-item'>
               {editMode === review.id ? (
                 <div>
                   <textarea
@@ -315,11 +316,11 @@ const UserProfile = () => {
         <p>No reviews found.</p>
       )}
 
-      <h2 style={styles.subHeader}>Your Comments</h2>
+      <h2 className='sub-header'>Your Comments</h2>
       {comments.length > 0 ? (
-        <ul style={styles.list}>
+        <ul className='list'>
           {comments.map((comment) => (
-            <li key={comment.comment_id} style={styles.listItem}>
+            <li key={comment.comment_id} className='list-item'>
               {editCommentMode === comment.comment_id ? (
                 <div>
                   <textarea
@@ -368,65 +369,6 @@ const UserProfile = () => {
       )}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: '600px',
-    margin: 'auto',
-    padding: '20px',
-    textAlign: 'center',
-  },
-  header: {
-    fontSize: '2.5em',
-    marginBottom: '20px',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: '30px',
-  },
-  formGroup: {
-    marginBottom: '15px',
-    textAlign: 'left',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '5px',
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-  },
-  error: {
-    color: 'red',
-    marginBottom: '15px',
-  },
-  button: {
-    padding: '10px 20px',
-    fontSize: '1em',
-    color: '#fff',
-    backgroundColor: '#007bff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-  },
-  subHeader: {
-    fontSize: '2em',
-    marginTop: '20px',
-    marginBottom: '15px',
-  },
-  list: {
-    listStyleType: 'none',
-    padding: '0',
-    margin: '0',
-  },
-  listItem: {
-    padding: '10px',
-    borderBottom: '1px solid #ddd',
-  },
 };
 
 export default UserProfile;

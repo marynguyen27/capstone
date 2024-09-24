@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import './Home.css';
 
 const Home = () => {
   const [dishes, setDishes] = useState([]);
@@ -56,8 +57,8 @@ const Home = () => {
   };
 
   return (
-    <div className='home'>
-      <h1>Welcome to the Home Page!</h1>
+    <div className='container'>
+      <h1 className='title'>Welcome to the Home Page!</h1>
       <p>
         Here you can browse a list of delicious dishes, read reviews, and more.
       </p>
@@ -69,7 +70,7 @@ const Home = () => {
           value={searchQuery}
           onChange={handleInputChange}
         />
-        <ul>
+        <ul className='item-list'>
           {filteredItems.length > 0
             ? filteredItems.map((item) => (
                 <li key={item.id}>
@@ -83,11 +84,10 @@ const Home = () => {
       <h1>List of Dishes</h1>
       {error && <p style={{ color: 'red' }}>Error: {error}</p>}
       {dishes.length > 0 ? (
-        <ul>
+        <ul className='item-list'>
           {dishes.map((dish) => (
-            <li key={dish.id}>
+            <li key={dish.id} className='item-card'>
               <Link to={`/items/${dish.id}`}>{dish.name}</Link>{' '}
-              {/* Each dish is a link */}
             </li>
           ))}
         </ul>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Home.css';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
@@ -44,11 +45,9 @@ const SignUp = () => {
 
   if (isLoggedIn) {
     return (
-      <div style={styles.container}>
-        <h1>You Are Logged In</h1>
-        <button onClick={() => navigate('/user-profile')} style={styles.button}>
-          Go to Profile
-        </button>
+      <div className='container'>
+        <h1 className='title'>You Are Logged In</h1>
+        <button onClick={() => navigate('/user-profile')}>Go to Profile</button>
       </div>
     );
   }

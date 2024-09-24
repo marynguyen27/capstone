@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './Home.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -53,16 +54,16 @@ const Login = () => {
 
   if (isLoggedIn) {
     return (
-      <div>
-        <h1>You Are Logged In</h1>
+      <div className='container'>
+        <h1 className='title'>You Are Logged In</h1>
         <button onClick={() => navigate('/user-profile')}>Go to Profile</button>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1>Login</h1>
+    <div className='container'>
+      <h1 className='title'>Login</h1>
       <form onSubmit={handleLogin}>
         <div>
           <label htmlFor='email'>Email:</label>
