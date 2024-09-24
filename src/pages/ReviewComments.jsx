@@ -8,24 +8,28 @@ const ReviewComments = ({ reviewId }) => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
+        if (!reviewId) {
+          console.log('Review ID is not defined');
+          return;
+        }
+
         const response = await fetch(
           `http://localhost:3000/comments/review/${reviewId}`
         );
 
         if (response.status === 404) {
           setComments([]);
-          console.log('No comments found for this review');
           return;
         }
 
         if (!response.ok) {
-          throw new Error('Failed to fetch comments');
+          throw new Error(`Failed to fetch comments: ${response.statusText}`);
         }
 
         const data = await response.json();
         setComments(data);
       } catch (error) {
-        console.error('Error:', error.message);
+        console.error('Unexpected error fetching comments:', error.message);
       }
     };
 
