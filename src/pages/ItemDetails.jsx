@@ -54,8 +54,6 @@ const ItemDetails = () => {
       itemId: currentItemId,
     };
 
-    console.log('Review payload:', review);
-
     try {
       const response = await fetch('http://localhost:3000/reviews', {
         method: 'POST',

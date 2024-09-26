@@ -66,7 +66,7 @@ const Home = () => {
       <div>
         <input
           type='text'
-          placeholder='Search items...'
+          placeholder='Search for a dish...'
           value={searchQuery}
           onChange={handleInputChange}
         />
