@@ -4,10 +4,10 @@ const { Client } = require('pg');
 const { checkAuth } = require('../middleware/auth');
 
 const client = new Client({
-  user: 'postgres',
-  host: 'localhost',
+  user: 'block37_user',
+  host: 'dpg-crqbhidsvqrc73csmf90-a.oregon-postgres.render.com',
   database: 'block37',
-  password: '12345677',
+  password: 'NC4LTqaFWLUbl5zuJMU9CX2HyEmmxNRX',
   port: 5432,
 });
 
