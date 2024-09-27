@@ -21,7 +21,7 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const apiEndpoint = 'http://localhost:3000/users/signup';
+    const apiEndpoint = 'https://capstone-5tiv.onrender.com/users/signup';
 
     try {
       const response = await fetch(apiEndpoint, {

@@ -25,13 +25,13 @@ const ItemDetails = () => {
     const fetchItemDetails = async () => {
       try {
         const itemResponse = await fetch(
-          `http://localhost:3000/items/${currentItemId}`
+          `https://capstone-5tiv.onrender.com/items/${currentItemId}`
         );
         const itemData = await itemResponse.json();
         setItem(itemData);
 
         const reviewsResponse = await fetch(
-          `http://localhost:3000/items/${currentItemId}/reviews`
+          `https://capstone-5tiv.onrender.com/items/${currentItemId}/reviews`
         );
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
@@ -55,14 +55,17 @@ const ItemDetails = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3000/reviews', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userToken}`,
-        },
-        body: JSON.stringify(review),
-      });
+      const response = await fetch(
+        'https://capstone-5tiv.onrender.com/reviews',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${userToken}`,
+          },
+          body: JSON.stringify(review),
+        }
+      );
 
       if (response.ok) {
         const newReview = await response.json();

@@ -8,7 +8,10 @@ const cors = require('cors');
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: [
+      'https://66f608a051454f90939fa72c--delicate-faloodeh-3dba66.netlify.app/',
+      'https://capstone-5tiv.onrender.com',
+    ],
   })
 );
 

@@ -27,20 +27,23 @@ const UserProfile = () => {
       }
 
       try {
-        const userResponse = await fetch('http://localhost:3000/users/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const userResponse = await fetch(
+          'https://capstone-5tiv.onrender.com/users/me',
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
           setEmail(userData.email);
           const reviewsResponse = await fetch(
-            `http://localhost:3000/reviews/user/${userData.id}`,
+            `https://capstone-5tiv.onrender.com/reviews/user/${userData.id}`,
             {
               method: 'GET',
               headers: {
@@ -52,7 +55,7 @@ const UserProfile = () => {
           setReviews(reviewsData);
 
           const commentsResponse = await fetch(
-            `http://localhost:3000/comments/user/${userData.id}`,
+            `https://capstone-5tiv.onrender.com/comments/user/${userData.id}`,
             {
               method: 'GET',
               headers: {
@@ -93,14 +96,17 @@ const UserProfile = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `https://capstone-5tiv.onrender.com/users/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (response.ok) {
         setSuccess('Profile updated successfully.');
@@ -118,7 +124,7 @@ const UserProfile = () => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
-        `http://localhost:3000/reviews/${reviewId}`,
+        `https://capstone-5tiv.onrender.com/reviews/${reviewId}`,
         {
           method: 'DELETE',
           headers: {
@@ -141,7 +147,7 @@ const UserProfile = () => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
-        `http://localhost:3000/reviews/${reviewId}`,
+        `https://capstone-5tiv.onrender.com/reviews/${reviewId}`,
         {
           method: 'PUT',
           headers: {
@@ -172,7 +178,7 @@ const UserProfile = () => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
-        `http://localhost:3000/comments/${commentId}`,
+        `https://capstone-5tiv.onrender.com/comments/${commentId}`,
         {
           method: 'DELETE',
           headers: {
@@ -197,7 +203,7 @@ const UserProfile = () => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
-        `http://localhost:3000/comments/${commentId}`,
+        `https://capstone-5tiv.onrender.com/comments/${commentId}`,
         {
           method: 'PUT',
           headers: {

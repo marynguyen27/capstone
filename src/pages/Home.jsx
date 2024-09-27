@@ -10,7 +10,7 @@ const Home = () => {
 
   const fetchDishes = async () => {
     try {
-      const response = await fetch('http://localhost:3000/items');
+      const response = await fetch('https://capstone-5tiv.onrender.com/items');
       if (!response.ok) {
         throw new Error('Failed to fetch dishes');
       }
@@ -35,7 +35,7 @@ const Home = () => {
     const fetchItems = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3000/items?search=${searchQuery}`
+          `https://capstone-5tiv.onrender.com/items?search=${searchQuery}`
         );
 
         if (!response.ok) {

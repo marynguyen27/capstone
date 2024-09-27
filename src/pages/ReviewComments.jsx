@@ -14,7 +14,7 @@ const ReviewComments = ({ reviewId }) => {
         }
 
         const response = await fetch(
-          `http://localhost:3000/comments/review/${reviewId}`
+          `https://capstone-5tiv.onrender.com/comments/review/${reviewId}`
         );
 
         if (response.status === 404) {
@@ -42,7 +42,7 @@ const ReviewComments = ({ reviewId }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/comments/${reviewId}`,
+        `https://capstone-5tiv.onrender.com/comments/${reviewId}`,
         {
           method: 'POST',
           headers: {
