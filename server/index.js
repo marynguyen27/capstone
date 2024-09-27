@@ -6,14 +6,7 @@ const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 3000;
 const cors = require('cors');
 
-app.use(
-  cors({
-    origin: [
-      'https://66f608a051454f90939fa72c--delicate-faloodeh-3dba66.netlify.app/',
-      'https://capstone-5tiv.onrender.com',
-    ],
-  })
-);
+app.use(cors());
 
 app.use(express.json());
 
