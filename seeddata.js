@@ -1,4 +1,5 @@
 require('dotenv').config();
+const sql = require('./database.js');
 const { Client } = require('pg');
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
@@ -222,6 +223,7 @@ const dishes = [
 async function seedData() {
   try {
     await client.connect();
+    await client.query(sql);
     console.log('Connected to the database');
 
     // Clear existing data
@@ -241,10 +243,7 @@ async function seedData() {
     // Seed Items
     console.log('Seeding Items...');
     for (const dish of dishes) {
-      await client.query(
-        'INSERT INTO items (name, description) VALUES ($1, $2)',
-        [dish, 'This is a description']
-      );
+      await client.query('INSERT INTO items (name) VALUES ($1)', [dish]);
     }
     console.log(`${dishes.length} items (dishes) inserted successfully`);
 
