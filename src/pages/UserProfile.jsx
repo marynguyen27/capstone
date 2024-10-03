@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './UserProfile.css';
 
+// state for user details, reviews, comments, edits, form data, errors, redirect
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -17,6 +18,7 @@ const UserProfile = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
+  // fetch user profile, reviews, comments
   useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem('token');
@@ -77,11 +79,13 @@ const UserProfile = () => {
     fetchUserProfile();
   }, [navigate]);
 
+  // user logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+  // profile update of user login email and/or pw
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError('');
@@ -120,6 +124,7 @@ const UserProfile = () => {
     }
   };
 
+  // delete reviews
   const handleDeleteReview = async (reviewId) => {
     const token = localStorage.getItem('token');
     try {
@@ -143,6 +148,7 @@ const UserProfile = () => {
     }
   };
 
+  // edit reviews
   const handleEditReview = async (reviewId) => {
     const token = localStorage.getItem('token');
     try {
@@ -174,6 +180,7 @@ const UserProfile = () => {
     }
   };
 
+  // delete comments
   const handleDeleteComment = async (commentId) => {
     const token = localStorage.getItem('token');
     try {
@@ -199,6 +206,7 @@ const UserProfile = () => {
     }
   };
 
+  // edit comments
   const handleEditComment = async (commentId) => {
     const token = localStorage.getItem('token');
     try {
@@ -236,10 +244,12 @@ const UserProfile = () => {
     }
   };
 
+  // error messages
   if (error) {
     return <div>Error: {error}</div>;
   }
 
+  // loading state rendering
   if (!user) {
     return <div>Loading...</div>;
   }

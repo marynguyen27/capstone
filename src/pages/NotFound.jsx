@@ -17,6 +17,7 @@ const NotFound = () => {
   );
 };
 
+// css for not found pg
 const styles = {
   container: {
     textAlign: 'center',
