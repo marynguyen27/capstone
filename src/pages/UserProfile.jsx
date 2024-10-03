@@ -216,17 +216,23 @@ const UserProfile = () => {
 
       if (response.ok) {
         const updatedComment = await response.json();
-        setComments(
-          comments.map((comment) =>
-            comment.comment_id === commentId ? updatedComment : comment
+
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.comment_id === commentId
+              ? { ...comment, comment_text: editedCommentText }
+              : comment
           )
         );
+
+        setSuccess('Comment updated successfully!');
         setEditCommentMode(null);
+        setEditedCommentText('');
       } else {
-        setError('Failed to update comment');
+        setError('Failed to update comment.');
       }
     } catch (error) {
-      setError('Error updating comment');
+      setError('An error occurred while updating the comment.');
     }
   };
 
