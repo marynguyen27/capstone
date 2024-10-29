@@ -6,7 +6,7 @@ const client = new Client({
   database: process.env.DB_NAME || 'capstone_o7rj',
   password: process.env.DB_PASSWORD || 'VRmRkynUmkQPbqYncJNDkp6cbZFyvGp3',
   port: process.env.DB_PORT || 5432,
-  ssl: true,
+  ssl: { rejectUnauthorized: false },
 });
 
 async function connectDB() {
